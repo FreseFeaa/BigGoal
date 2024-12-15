@@ -9,12 +9,14 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+// Функция для вывода ошибок
 func failOnError(err error, msg string) {
 	if err != nil {
 		log.Panicf("%s: %s", msg, err)
 	}
 }
 
+// Создаем структуру Producer
 type Producer struct {
 	UserName     string
 	Password     string
@@ -25,16 +27,31 @@ type Producer struct {
 	ExchangeName string
 }
 
-func (p *Producer) Produce(routingKey, messageType, body string) {
-	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", p.UserName, p.Password, p.Host, p.Port))
-	failOnError(err, "Failed to connect to RabbitMQ")
+// Делаем метод структуры Producer
+func (p *Producer) Produce(routingKey, messageType, body string) { //Передаём в него - routingKey, messageType, body
+	//Подключаемся к RabbitMQ
+	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", p.UserName, p.Password, p.Host, p.Port)) //Эти данные лежат в config, передаем их в момент запуска. Для безопастности крч
+	failOnError(err, "Не удалось подключиться к RabbitMQ")                                             // Если ошибка при подключении к RabbitMQ
 	defer conn.Close()
 
+	//Создаем канал канал для сообщений
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
+	failOnError(err, "Не удалось открыть канал") //Проверка на ошибку при создании канала
+	defer ch.Close()                             //гарант закрытия
 
-	failOnError(err, "Failed to declare a queue")
+	//Объявление очереди
+	q, err := ch.QueueDeclare(
+		p.QueueName,
+		false, // durable: очередь не будет сохраняться при перезапуске сервера
+		false, // autoDelete: очередь не будет удалена, когда все подписчики отключатся
+		false, // exclusive: очередь не будет эксклюзивной для данного соединения
+		false, // noWait: не ждать подтверждения создания очереди
+		nil,   // аргументы (можно передать дополнительные параметры)
+	)
+	failOnError(err, "He удалось создать/подключиться к очереди")
+	fmt.Println(q) //Выводим информацию об очереди
+
+	// контекст с таймаутом, который используется для управления временем выполнения операций
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -47,6 +64,6 @@ func (p *Producer) Produce(routingKey, messageType, body string) {
 			ContentType: messageType,
 			Body:        []byte(body),
 		})
-	failOnError(err, "Failed to publish a message")
-	log.Printf(" [x] Sent %s\n", body)
+	failOnError(err, "Не удалось отправить сообщение(")
+	log.Printf(" [x] Отправлено %s\n", body)
 }
