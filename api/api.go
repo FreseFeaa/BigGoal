@@ -68,18 +68,3 @@ func Main() {
 	fmt.Println("Сервер запущен по: http://localhost:3000")
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }
-
-//Это продюссер, с ним надо что-то сделать
-// func main() {
-// 	pro := Producer{
-// 		UserName:     config.Config.UserName,
-// 		Password:     config.Config.Password,
-// 		Host:         config.Config.Host,
-// 		Port:         config.Config.Port,
-// 		QueueName:    config.Config.QueueName,
-// 		ServiceName:  config.Config.ServiceName,
-// 		ExchangeName: config.Config.ExchangeName,
-// 	}
-
-// 	pro.Produce(config.Config.routingKey, config.Config.messageType, config.Config.body)
-// }

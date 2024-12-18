@@ -18,13 +18,13 @@ func failOnError(err error, msg string) {
 
 // Создаем структуру Producer
 type Producer struct {
-	UserName     string
-	Password     string
-	Host         string
-	Port         string
-	QueueName    string
-	ServiceName  string
-	ExchangeName string
+	UserName      string
+	Password      string
+	Host          string
+	Port          string
+	QueueNameSent string
+	ServiceName   string
+	ExchangeName  string
 }
 
 // Делаем метод структуры Producer
@@ -41,29 +41,32 @@ func (p *Producer) Produce(routingKey, messageType, body string) { //Перед�
 
 	//Объявление очереди
 	q, err := ch.QueueDeclare(
-		p.QueueName,
-		false, // durable: очередь не будет сохраняться при перезапуске сервера
+		p.QueueNameSent,
+		true,  // durable: очередь не будет сохраняться при перезапуске сервера
 		false, // autoDelete: очередь не будет удалена, когда все подписчики отключатся
 		false, // exclusive: очередь не будет эксклюзивной для данного соединения
 		false, // noWait: не ждать подтверждения создания очереди
 		nil,   // аргументы (можно передать дополнительные параметры)
 	)
 	failOnError(err, "He удалось создать/подключиться к очереди")
-	fmt.Println(q) //Выводим информацию об очереди
-
+	fmt.Println("Информация об очереди: ", q) //Выводим информацию об очереди
 	// контекст с таймаутом, который используется для управления временем выполнения операций
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err = ch.PublishWithContext(ctx,
-		"",         // exchange
+		"Meow",     // exchange
 		routingKey, // routing key
 		false,      // mandatory
 		false,      // immediate
 		amqp.Publishing{
 			ContentType: messageType,
-			Body:        []byte(body),
+			Headers: amqp.Table{
+				"type": "hello",
+			},
+			Body: []byte(body),
 		})
 	failOnError(err, "Не удалось отправить сообщение(")
-	log.Printf(" [x] Отправлено %s\n", body)
+
+	log.Printf(" - Отправлено: %s\n", body)
 }

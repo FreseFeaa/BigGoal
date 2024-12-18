@@ -3,6 +3,8 @@ package consumer
 import (
 	"fmt"
 	"log"
+	"mb/config"
+	"mb/producer"
 	"mb/redis"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -47,7 +49,7 @@ func (c *Consumer) Consume() {
 		false,       // noWait: если true, метод не будет ждать подтверждения
 		nil,         // аргументы: дополнительные параметры
 	)
-	failOnError(err, "Не удалось создать ch.Cosume")
+	failOnError(err, "Не удалось создать ch.Consume")
 
 	//Делаем канал
 	forever := make(chan bool)
@@ -58,6 +60,21 @@ func (c *Consumer) Consume() {
 			if msgType, ok := d.Headers["type"].(string); ok && msgType == "hello" {
 				fmt.Println("Это сообщение с типом: hello")
 				redis.Increment("received_hello")
+
+				// Это продюссер, с ним надо что-то сделать
+
+				pro := producer.Producer{
+					UserName:      config.Config.UserName,
+					Password:      config.Config.Password,
+					Host:          config.Config.Host,
+					Port:          config.Config.Port,
+					QueueNameSent: config.Config.QueueNameSent,
+					ServiceName:   config.Config.ServiceName,
+					ExchangeName:  config.Config.ExchangeName,
+				}
+
+				pro.Produce("meow1", "text/plain", "И тебе привет!")
+				redis.Increment("sent_hello")
 			}
 
 		}
